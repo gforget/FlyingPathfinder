@@ -19,6 +19,21 @@ public:
 	// Sets default values for this character's properties
 	AFlyingCharacter();
 	
+	ARotationViewPointRef* GetRotationViewPointRef();
+	
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
+	UPROPERTY(EditAnywhere)
+	float RotationRate = 100.0f;
+	
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<ARotationViewPointRef> RotationViewPointRefClass;
+	
+	UPROPERTY()
+	ARotationViewPointRef* RotationViewPointRef;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputMappingContext* DefaultMappingContext;
 	
@@ -50,21 +65,6 @@ public:
 	void GoUpInput(const FInputActionValue& Value);
 	void GoDownInput(const FInputActionValue& Value);
 	void ToggleFlyModeInput(const FInputActionValue& Value);
-	
-	ARotationViewPointRef* GetRotationViewPointRef();
-	
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-	UPROPERTY(EditAnywhere)
-	float RotationRate = 100.0f;
-
-	UPROPERTY()
-	ARotationViewPointRef* RotationViewPointRef;
-
-	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<ARotationViewPointRef> RotationViewPointRefClass;
 	
 public:
 	// Called every frame
