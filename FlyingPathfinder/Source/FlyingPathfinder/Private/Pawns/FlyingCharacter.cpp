@@ -1,10 +1,10 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "FlyingPathfinder/Public/FlyingCharacter.h"
+#include "FlyingPathfinder/Public/Pawns/FlyingCharacter.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "FlyingPathfinder/Public/RotationViewPointRef.h"
+#include "FlyingPathfinder/Public/Actors/RotationViewPointRef.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values

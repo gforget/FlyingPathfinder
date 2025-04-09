@@ -1,7 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "CustomPlayerController.h"
+#include "Controllers/CustomPlayerController.h"
 
 void ACustomPlayerController::BeginPlay()
 {
@@ -14,7 +14,7 @@ void ACustomPlayerController::ActivateCursorMode(bool value)
 	
 	if (value)
 	{
-		// Use GameAndUI for cursor mode
+		// Select mode
 		FInputModeGameAndUI InputMode;
 		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
 		InputMode.SetHideCursorDuringCapture(false);
@@ -22,7 +22,7 @@ void ACustomPlayerController::ActivateCursorMode(bool value)
 	}
 	else
 	{
-		// Use GameOnly for normal movement/camera control
+		// Navigation mode
 		FInputModeGameOnly InputMode;
 		SetInputMode(InputMode);
 	}

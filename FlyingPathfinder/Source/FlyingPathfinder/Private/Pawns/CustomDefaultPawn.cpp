@@ -1,14 +1,15 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "CustomDefaultPawn.h"
+#include "Pawns/CustomDefaultPawn.h"
 
-#include "CustomAIController.h"
-#include "CustomPlayerController.h"
+#include "Controllers/CustomAIController.h"
+#include "Controllers/CustomPlayerController.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "DrawDebugHelpers.h"
+#include "GameFramework/PawnMovementComponent.h"
+#include "GameModes/FlyingPathfinderGameMode.h"
 
 
 // Sets default values
@@ -22,6 +23,7 @@ ACustomDefaultPawn::ACustomDefaultPawn()
 void ACustomDefaultPawn::BeginPlay()
 {
 	Super::BeginPlay();
+	FlyingPathfinderGameMode = Cast<AFlyingPathfinderGameMode>(GetWorld()->GetAuthGameMode());
 }
 
 void ACustomDefaultPawn::ToggleSelectModeInput(const FInputActionValue& Value)
@@ -117,9 +119,9 @@ void ACustomDefaultPawn::SelectOnSceneInput(const FInputActionValue& Value)
 				GetWorld(),
 				LastTraceHitLocation,
 				SphereRadius,
-				12,  // Segments
+				12,
 				DebugColor,
-				false,  // Persistent
+				false, 
 				DebugDuration
 			);
 		}
@@ -128,6 +130,9 @@ void ACustomDefaultPawn::SelectOnSceneInput(const FInputActionValue& Value)
 		{
 			TargetAIController->SetPositionToGo(LastTraceHitLocation);
 		}
+
+		
+		AFlyingPathfinderVolume* FlyingPathfinderVolume = FlyingPathfinderGameMode->GetVolumeAtLocation(LastTraceHitLocation);
 	}
 }
 

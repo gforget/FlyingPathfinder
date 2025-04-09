@@ -3,7 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Utility/GenericStack.h"
 #include "GameFramework/Volume.h"
+#include "FlyingPathfindingNode.h"
 #include "FlyingPathfinderVolume.generated.h"
 
 UCLASS()
@@ -15,8 +17,9 @@ public:
 	// Sets default values for this actor's properties
 	AFlyingPathfinderVolume();
 
+	GenericStack<UFlyingPathfindingNode*> GetPathToDestination(UFlyingPathfindingNode* InitialNode, UFlyingPathfindingNode* DestinationNode);
+	
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	// Called when actor is moved, rotated or scaled in the editor
@@ -29,11 +32,24 @@ protected:
 	// Called when actor is moved in the editor
 	virtual void PostEditMove(bool bFinished) override;
 	
-	// Updates the debug visualization
 	void UpdateDebugVisualization();
+	void GeneratePathfindingNodes();
+	void ClearPathfindingNodes();
+
 #endif
+
+	// Array of created pathfinding nodes
+	UPROPERTY()
+	TArray<UFlyingPathfindingNode*> PathfindingNodes;
+
+	// 3D grid to store references to nodes by position
+	UPROPERTY()
+	TMap<FIntVector, UFlyingPathfindingNode*> NodeGrid;
+
+	//Debug properties
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Debug")
+	int DebugIndexNode = 0;
 	
-	// Debug sphere properties
 	UPROPERTY(EditAnywhere, Category = "Debug")
 	bool bShowDebugSphere = true;
 	
@@ -43,14 +59,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Debug", meta = (EditCondition = "bShowDebugSphere"))
 	FColor DebugSphereColor = FColor::Green;
 	
-	// Grid properties
 	UPROPERTY(EditAnywhere, Category = "Debug", meta = (EditCondition = "bShowDebugSphere", ClampMin = "50.0"))
 	float GridSpacing = 200.0f;
-	
-	UPROPERTY(EditAnywhere, Category = "Debug", meta = (EditCondition = "bShowDebugSphere"))
-	bool bLimitGridToBounds = true;
 
 public:
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 };

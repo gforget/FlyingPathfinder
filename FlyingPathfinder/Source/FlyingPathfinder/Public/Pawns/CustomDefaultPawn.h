@@ -7,6 +7,7 @@
 #include "GameFramework/DefaultPawn.h"
 #include "CustomDefaultPawn.generated.h"
 
+class AFlyingPathfinderGameMode;
 class ACustomAIController;
 class UInputMappingContext;
 class UInputAction;
@@ -43,6 +44,9 @@ protected:
 	void SelectOnSceneInput(const FInputActionValue& Value);
 
 	UPROPERTY()
+	AFlyingPathfinderGameMode* FlyingPathfinderGameMode;
+	
+	UPROPERTY()
 	ACustomAIController* TargetAIController;
 	
 public:
@@ -50,7 +54,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 	void RegisterAIController(ACustomAIController* NewAIController);
 	

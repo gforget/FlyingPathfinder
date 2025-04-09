@@ -1,7 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "FlyingPathfinder/Public/RotationViewPointRef.h"
+#include "FlyingPathfinder/Public/Actors/RotationViewPointRef.h"
 
 
 // Sets default values

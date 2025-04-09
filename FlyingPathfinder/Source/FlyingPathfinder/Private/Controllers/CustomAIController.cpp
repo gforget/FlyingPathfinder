@@ -1,7 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
-#include "CustomAIController.h"
+#include "Controllers/CustomAIController.h"
 
-#include "CustomDefaultPawn.h"
+#include "Pawns/CustomDefaultPawn.h"
 #include "BehaviorTree/BlackboardComponent.h"
 
 // Sets default values
