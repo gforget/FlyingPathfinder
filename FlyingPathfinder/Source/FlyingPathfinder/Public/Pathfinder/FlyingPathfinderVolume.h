@@ -1,4 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Copyright(c) 2025 Gabriel Forget. All Rights Reserved.
 
 #pragma once
 
@@ -17,7 +17,7 @@ public:
 	// Sets default values for this actor's properties
 	AFlyingPathfinderVolume();
 
-	GenericStack<UFlyingPathfindingNode*> GetPathToDestination(UFlyingPathfindingNode* InitialNode, UFlyingPathfindingNode* DestinationNode);
+	GenericStack<UFlyingPathfindingNode*> GetPathToDestination(FVector InitialPoint, FVector DestinationPoint);
 	
 protected:
 	virtual void BeginPlay() override;
@@ -37,31 +37,61 @@ protected:
 	void ClearPathfindingNodes();
 
 #endif
-
+	
 	// Array of created pathfinding nodes
 	UPROPERTY()
 	TArray<UFlyingPathfindingNode*> PathfindingNodes;
 
-	// 3D grid to store references to nodes by position
+	// 3D grid to store references to nodes by position - For optimized search of the Nodes
 	UPROPERTY()
 	TMap<FIntVector, UFlyingPathfindingNode*> NodeGrid;
-
-	//Debug properties
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Debug")
-	int DebugIndexNode = 0;
 	
+	// Array to store temporary nodes
+	UPROPERTY()
+	TArray<UFlyingPathfindingNode*> TemporaryNodes;
+	
+	UPROPERTY(EditAnywhere, Category = "Volume Properties", meta = (ClampMin = "50.0"))
+	FVector GridSpacing = FVector(200.0f, 200.0f, 200.0f);
+	
+	// Collision detection for nodes
+	UPROPERTY(EditAnywhere, Category = "Volume Properties", meta = (ClampMin = "10.0", UIMin = "10.0"))
+	float BlockCheckRadius = 50.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Volume Properties", meta = (ClampMin = "10.0", UIMin = "10.0"))
+	float NeighbourConnectionTraceRadius = 50.0f;
+	
+	//Debug properties
 	UPROPERTY(EditAnywhere, Category = "Debug")
 	bool bShowDebugSphere = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Debug")
+	int DebugIndexNode = 0;
 	
 	UPROPERTY(EditAnywhere, Category = "Debug", meta = (EditCondition = "bShowDebugSphere"))
 	float DebugSphereRadius = 20.0f;
 	
 	UPROPERTY(EditAnywhere, Category = "Debug", meta = (EditCondition = "bShowDebugSphere"))
 	FColor DebugSphereColor = FColor::Green;
-	
-	UPROPERTY(EditAnywhere, Category = "Debug", meta = (EditCondition = "bShowDebugSphere", ClampMin = "50.0"))
-	float GridSpacing = 200.0f;
 
 public:
 	virtual void Tick(float DeltaTime) override;
+
+private:
+	// Find the closest pathfinding node to a given world position
+	UFlyingPathfindingNode* FindClosestNode(const FVector& Point);
+	
+	// Create a temporary node at the given location and connect it to nearby nodes
+	UFlyingPathfindingNode* CreateTemporaryNode(const FVector& Location);
+	
+	// Clear all temporary nodes and their connections
+	void ClearTemporaryNodes();
+	
+	// Check if a position is blocked by solid geometry
+	bool IsPositionBlocked(const FVector& Position, float Radius);
+
+	// Return all nodes from a radius set in Grid Metric (not world metrics)
+	TArray<UFlyingPathfindingNode*> FindNodesInRadius(const FVector& Point, int32 Radius);
+
+	
+	bool HasClearSphereLineOfSight(const FVector& Start, const FVector& End);
 };

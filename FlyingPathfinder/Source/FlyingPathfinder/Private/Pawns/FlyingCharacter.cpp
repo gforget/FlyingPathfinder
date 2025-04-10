@@ -1,4 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Copyright(c) 2025 Gabriel Forget. All Rights Reserved.
 
 
 #include "FlyingPathfinder/Public/Pawns/FlyingCharacter.h"
@@ -6,6 +6,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "FlyingPathfinder/Public/Actors/RotationViewPointRef.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 // Sets default values
 AFlyingCharacter::AFlyingCharacter()
@@ -101,6 +102,38 @@ void AFlyingCharacter::BeginPlay()
 
 	RotationViewPointRef->SetOwnerController(GetController());
 	RotationViewPointRef->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform, NAME_None);
+}
+
+void AFlyingCharacter::PostActorCreated()
+{
+	Super::PostActorCreated();
+	GenerateEditorAnchorPositionVisualisation();
+}
+
+void AFlyingCharacter::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+	GenerateEditorAnchorPositionVisualisation();
+}
+
+void AFlyingCharacter::PostEditMove(bool bFinished)
+{
+	Super::PostEditMove(bFinished);
+	GenerateEditorAnchorPositionVisualisation();
+}
+
+void AFlyingCharacter::GenerateEditorAnchorPositionVisualisation() const
+{
+	if (const UWorld* World = GetWorld())
+	{
+		if (World->WorldType == EWorldType::EditorPreview)
+		{
+			UKismetSystemLibrary::FlushPersistentDebugLines(this);
+
+			const FVector ActorLocation = GetActorLocation();
+			DrawDebugSphere(GetWorld(), ActorLocation + FootPositionAnchor, 5.0f, 12, FColor::Purple, true, 0.0f, 0, 0.0f);
+		}
+	}
 }
 
 // Called every frame

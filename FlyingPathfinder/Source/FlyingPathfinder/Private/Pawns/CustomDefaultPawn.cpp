@@ -1,6 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-
+﻿// Copyright(c) 2025 Gabriel Forget. All Rights Reserved.
 #include "Pawns/CustomDefaultPawn.h"
 
 #include "Controllers/CustomAIController.h"
@@ -10,6 +8,8 @@
 #include "DrawDebugHelpers.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "GameModes/FlyingPathfinderGameMode.h"
+#include "Pathfinder/FlyingPathfinderVolume.h"
+#include "Pawns/FlyingCharacter.h"
 
 
 // Sets default values
@@ -126,13 +126,24 @@ void ACustomDefaultPawn::SelectOnSceneInput(const FInputActionValue& Value)
 			);
 		}
 		
-		if (TargetAIController)
-		{
-			TargetAIController->SetPositionToGo(LastTraceHitLocation);
-		}
-
+		// if (TargetAIController)
+		// {
+		// 	TargetAIController->SetPositionToGo(LastTraceHitLocation);
+		// }
 		
-		AFlyingPathfinderVolume* FlyingPathfinderVolume = FlyingPathfinderGameMode->GetVolumeAtLocation(LastTraceHitLocation);
+		if (FlyingPathfinderGameMode)
+		{
+			AFlyingCharacter* FlyingCharacter = Cast<AFlyingCharacter>(TargetAIController->GetPawn());
+			AFlyingPathfinderVolume* FlyingPathfinderVolume = FlyingPathfinderGameMode->GetVolumeAtLocation(LastTraceHitLocation);
+			
+			if (FlyingCharacter && FlyingPathfinderVolume)
+			{
+				FlyingPathfinderVolume->GetPathToDestination(
+					FlyingCharacter->GetActorLocation() + FlyingCharacter->FootPositionAnchor,
+					LastTraceHitLocation
+					);
+			}
+		}
 	}
 }
 

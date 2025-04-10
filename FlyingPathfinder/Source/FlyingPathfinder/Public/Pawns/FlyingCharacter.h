@@ -1,4 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Copyright(c) 2025 Gabriel Forget. All Rights Reserved.
 
 #pragma once
 
@@ -20,11 +20,21 @@ public:
 	AFlyingCharacter();
 	
 	ARotationViewPointRef* GetRotationViewPointRef();
+
+	UPROPERTY(EditDefaultsOnly, Category="Position Reference")
+	FVector FootPositionAnchor = FVector(0.0f, 0.0f, 25.0f);
 	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+#if WITH_EDITOR
+	virtual void PostActorCreated() override;
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+	virtual void PostEditMove(bool bFinished) override;
+	void GenerateEditorAnchorPositionVisualisation() const;
+#endif
+	
 	UPROPERTY(EditAnywhere)
 	float RotationRate = 100.0f;
 	
