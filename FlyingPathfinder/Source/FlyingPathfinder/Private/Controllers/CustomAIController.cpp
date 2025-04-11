@@ -20,7 +20,10 @@ void ACustomAIController::SetPositionToGo(FVector PositionToGo)
 void ACustomAIController::BeginPlay()
 {
 	Super::BeginPlay();
-	Cast<ACustomDefaultPawn>(GetWorld()->GetFirstPlayerController()->GetPawn())->RegisterAIController(this);
+	if (ACustomDefaultPawn* CustomDefaultPawn = Cast<ACustomDefaultPawn>(GetWorld()->GetFirstPlayerController()->GetPawn()))
+	{
+		CustomDefaultPawn->RegisterAIController(this);
+	}
 }
 
 void ACustomAIController::OnPossess(APawn* InPawn)

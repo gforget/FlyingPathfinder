@@ -4,6 +4,7 @@
 #include "DrawDebugHelpers.h"
 #include "EngineUtils.h"
 #include "Components/BrushComponent.h"
+#include "Utility/GenericPriorityQueue.h"
 
 // Sets default values
 AFlyingPathfinderVolume::AFlyingPathfinderVolume()
@@ -21,63 +22,159 @@ GenericStack<UFlyingPathfindingNode*> AFlyingPathfinderVolume::GetPathToDestinat
 	UFlyingPathfindingNode* InitialNode = CreateTemporaryNode(InitialPoint + FVector(0.0f, 0.0f, NeighbourConnectionTraceRadius+10.0f));
 	UFlyingPathfindingNode* DestinationNode = CreateTemporaryNode(DestinationPoint + FVector(0.0f, 0.0f, NeighbourConnectionTraceRadius+10.0f));
 	
-	// Draw spheres for temporary nodes
-	if (bShowDebugSphere)
+	GenericStack<UFlyingPathfindingNode*> PathStack;
+	if (!InitialNode || !DestinationNode)
 	{
-		DrawDebugSphere(
-			GetWorld(),
-			InitialNode->GetComponentLocation(),
-			DebugSphereRadius,
-			8,
-			FColor::Blue,
-			true,
-			-1.0f, 
-			0,
-			1.0f
-		);
+		DebugScreen("Node parameters send to pathfinding are empty", FColor::Red);
+		return PathStack;
+	}
 	
-		DrawDebugSphere(
-			GetWorld(),
-			DestinationNode->GetComponentLocation(),
-			DebugSphereRadius,
-			8,
-			FColor::Red,
-			true,
-			-1.0f, 
-			0,
-			1.0f
-		);
+	GenericPriorityQueue<UFlyingPathfindingNode*, float> frontier;
+	frontier.Enqueue(InitialNode, 0.0f);
 
-		// Draw connections for all temporary nodes
-		for (UFlyingPathfindingNode* TempNode : TemporaryNodes)
+	TMap<int, UFlyingPathfindingNode*> came_from;
+	AddNodeToCameFrom(came_from, InitialNode->IdNode, nullptr);
+	
+	TMap<int, float> cost_so_far;
+	AddCostToCostSoFar(cost_so_far, InitialNode->IdNode, 0.0f);
+
+	bool bPathFound = false;
+	int iteration = 0;
+
+	while (!frontier.IsEmpty())
+	{
+		UFlyingPathfindingNode* current = frontier.Dequeue();
+		for (int i = 0; i<current->AllConnectedNeighbours.Num(); i++)
 		{
-			FVector NodeLocation = TempNode->GetComponentLocation();
-		
-			// Draw debug lines for all connections
-			for (UFlyingPathfindingNode* Neighbor : TempNode->AllConnectedNeighbours)
+			iteration++;
+			UFlyingPathfindingNode* next = current->AllConnectedNeighbours[i];
+			if (!next)
 			{
-				if (Neighbor)
-				{
-					// Use magenta color for temporary node connections
-					FColor LineColor = TemporaryNodes.Contains(Neighbor) ? FColor::Magenta : FColor::Cyan;
+				DebugScreen("Current node"+ current->GetName() +" neighbour " + FString::FromInt(i) + "is Null", FColor::Red);
+				continue;
+			}
+			
+			const float new_cost = GetCostFromCostSoFar(cost_so_far, current->IdNode) + current->AllConnectedNeighboursBaseCost[i]*next->WeightCost;
+			
+			if ((!cost_so_far.Contains(next->IdNode) || new_cost < GetCostFromCostSoFar(cost_so_far, next->IdNode)))
+			{
+				AddCostToCostSoFar(cost_so_far, next->IdNode, new_cost);
+				AddNodeToCameFrom(came_from, next->IdNode, current);
 				
-					DrawDebugLine(
-						GetWorld(),
-						NodeLocation,
-						Neighbor->GetComponentLocation(),
-						LineColor,
-						true,
-						-1.0f,
-						0,
-						2.0f
-					);
+				frontier.Enqueue(next, new_cost + Heuristic(DestinationNode->GetComponentLocation(), next->GetComponentLocation()));
+				if (next->IdNode == DestinationNode->IdNode)
+				{
+					bPathFound = true;
+					break;
 				}
 			}
 		}
+
+		if (bPathFound)
+		{
+			break;
+		}
 	}
 	
-	GenericStack<UFlyingPathfindingNode*> PathStack;
+	//Generate the path
+	if (bPathFound)
+	{
+		UFlyingPathfindingNode* current = DestinationNode;
+		while(current->IdNode != InitialNode->IdNode)
+		{
+			PathStack.Push(current);
+			current = GetNodeFromCameFrom(came_from, current->IdNode);
+		}
+	}
+	
+	// clear memory to avoid memory leak
+	frontier.Clear(); 
+	came_from.Empty();
+	cost_so_far.Empty();
+
+	if (bShowDebugPath)
+	{
+		FlushPersistentDebugLines(GetWorld());
+		FlushDebugStrings(GetWorld());
+		GenericStack<UFlyingPathfindingNode*> PathStack2 = PathStack;
+					
+		UFlyingPathfindingNode* PrevNode = nullptr;
+		for (int32 i=PathStack2.Num()-1; i>=0; i--)
+		{
+			UFlyingPathfindingNode* CurrentNode = PathStack2.Pop();
+			DrawDebugSphere(
+				GetWorld(),
+				CurrentNode->GetComponentLocation(),
+				20.0f,
+				8,
+				FColor::Yellow,
+				true,
+				-1.0f, 
+				0,
+				1.0f
+			);
+						
+			DrawDebugLine(
+				GetWorld(),
+				PrevNode ? PrevNode->GetComponentLocation() : InitialNode->GetComponentLocation(),
+				CurrentNode->GetComponentLocation(),
+				FColor::Blue,
+				true,
+				-1.0f,
+				0,
+				1.0f
+			);
+					
+			PrevNode = CurrentNode;
+		}
+	}
+	
 	return PathStack;
+}
+
+void AFlyingPathfinderVolume::AddNodeToCameFrom(TMap<int, UFlyingPathfindingNode*>& came_from, int IdNode,
+	UFlyingPathfindingNode* ValueNode)
+{
+	if (!came_from.Contains(IdNode))
+	{
+		came_from.Add(IdNode, ValueNode);
+	}
+	else
+	{
+		came_from[IdNode] = ValueNode;
+	}
+}
+
+UFlyingPathfindingNode* AFlyingPathfinderVolume::GetNodeFromCameFrom(TMap<int, UFlyingPathfindingNode*>& came_from, int IdNode)
+{
+	if (came_from.Contains(IdNode))
+	{
+		return came_from[IdNode];
+	}
+
+	return nullptr;
+}
+
+void AFlyingPathfinderVolume::AddCostToCostSoFar(TMap<int, float>& cost_so_far, int IdNode, float Cost)
+{
+	if (!cost_so_far.Contains(IdNode))
+	{
+		cost_so_far.Add(IdNode, Cost);
+	}
+	else
+	{
+		cost_so_far[IdNode] = Cost;
+	}
+}
+
+float AFlyingPathfinderVolume::GetCostFromCostSoFar(TMap<int, float>& cost_so_far, int IdNode)
+{
+	if (cost_so_far.Contains(IdNode))
+	{
+		return cost_so_far[IdNode];
+	}
+
+	return 0.0f;
 }
 
 UFlyingPathfindingNode* AFlyingPathfinderVolume::CreateTemporaryNode(const FVector& Location)
@@ -149,46 +246,49 @@ UFlyingPathfindingNode* AFlyingPathfinderVolume::CreateTemporaryNode(const FVect
 			SearchRadius++;
 		}
 	}
+
+	//TODO: Might have to return to this. Connecting temporary node isn't usefull in the context of the tool, but might
+	//be helpfull later.
 	
 	// Connect to other temporary nodes using the final search radius
-	for (UFlyingPathfindingNode* OtherTempNode : TemporaryNodes)
-	{
-		// Skip self
-		if (OtherTempNode == TempNode)
-		{
-			continue;
-		}
-		
-		// Calculate grid distance between nodes
-		FVector OtherLocation = OtherTempNode->GetComponentLocation();
-		FIntVector OtherGridPos(
-			FMath::RoundToInt((OtherLocation.X - Min.X) / GridSpacing.X),
-			FMath::RoundToInt((OtherLocation.Y - Min.Y) / GridSpacing.Y),
-			FMath::RoundToInt((OtherLocation.Z - Min.Z) / GridSpacing.Z)
-		);
-		
-		FIntVector GridDiff = GridPos - OtherGridPos;
-		
-		// Only connect if within the expanded search radius
-		if (FMath::Abs(GridDiff.X) <= SearchRadius && 
-			FMath::Abs(GridDiff.Y) <= SearchRadius && 
-			FMath::Abs(GridDiff.Z) <= SearchRadius)
-		{
-			float Distance = FVector::Dist(Location, OtherLocation);
-			
-			// Check line of sight before connecting
-			if (HasClearSphereLineOfSight(Location, OtherLocation))
-			{
-				// Connect this temp node to other temp node
-				TempNode->AllConnectedNeighbours.Add(OtherTempNode);
-				TempNode->AllConnectedNeighboursBaseCost.Add(Distance);
-				
-				// Connect other temp node to this temp node
-				OtherTempNode->AllConnectedNeighbours.Add(TempNode);
-				OtherTempNode->AllConnectedNeighboursBaseCost.Add(Distance);
-			}
-		}
-	}
+	// for (UFlyingPathfindingNode* OtherTempNode : TemporaryNodes)
+	// {
+	// 	// Skip self
+	// 	if (OtherTempNode == TempNode)
+	// 	{
+	// 		continue;
+	// 	}
+	// 	
+	// 	// Calculate grid distance between nodes
+	// 	FVector OtherLocation = OtherTempNode->GetComponentLocation();
+	// 	FIntVector OtherGridPos(
+	// 		FMath::RoundToInt((OtherLocation.X - Min.X) / GridSpacing.X),
+	// 		FMath::RoundToInt((OtherLocation.Y - Min.Y) / GridSpacing.Y),
+	// 		FMath::RoundToInt((OtherLocation.Z - Min.Z) / GridSpacing.Z)
+	// 	);
+	// 	
+	// 	FIntVector GridDiff = GridPos - OtherGridPos;
+	// 	
+	// 	// Only connect if within the expanded search radius
+	// 	if (FMath::Abs(GridDiff.X) <= SearchRadius && 
+	// 		FMath::Abs(GridDiff.Y) <= SearchRadius && 
+	// 		FMath::Abs(GridDiff.Z) <= SearchRadius)
+	// 	{
+	// 		float Distance = FVector::Dist(Location, OtherLocation);
+	// 		
+	// 		// Check line of sight before connecting
+	// 		if (HasClearSphereLineOfSight(Location, OtherLocation))
+	// 		{
+	// 			// Connect this temp node to other temp node
+	// 			TempNode->AllConnectedNeighbours.Add(OtherTempNode);
+	// 			TempNode->AllConnectedNeighboursBaseCost.Add(Distance);
+	// 			
+	// 			// Connect other temp node to this temp node
+	// 			OtherTempNode->AllConnectedNeighbours.Add(TempNode);
+	// 			OtherTempNode->AllConnectedNeighboursBaseCost.Add(Distance);
+	// 		}
+	// 	}
+	// }
 	
 	// Add debug info if we reached the max search radius
 	if (!bFoundConnections)
@@ -380,15 +480,19 @@ void AFlyingPathfinderVolume::BeginPlay()
 	
 }
 
-void AFlyingPathfinderVolume::OnConstruction(const FTransform& Transform)
+// Called every frame
+void AFlyingPathfinderVolume::Tick(float DeltaTime)
 {
-	Super::OnConstruction(Transform);
-	
-	GeneratePathfindingNodes();
-	UpdateDebugVisualization();
+	Super::Tick(DeltaTime);
 }
 
 #if WITH_EDITOR
+void AFlyingPathfinderVolume::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+	UpdateDebugVisualization();
+}
+
 void AFlyingPathfinderVolume::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -404,6 +508,7 @@ void AFlyingPathfinderVolume::PostEditMove(bool bFinished)
 	GeneratePathfindingNodes();
 	UpdateDebugVisualization();
 }
+
 
 void AFlyingPathfinderVolume::ClearPathfindingNodes()
 {
@@ -603,12 +708,6 @@ void AFlyingPathfinderVolume::UpdateDebugVisualization()
 }
 #endif
 
-// Called every frame
-void AFlyingPathfinderVolume::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-}
-
 bool AFlyingPathfinderVolume::IsPositionBlocked(const FVector& Position, float Radius)
 {
 	if (!GetWorld())
@@ -675,3 +774,8 @@ bool AFlyingPathfinderVolume::HasClearSphereLineOfSight(const FVector& Start, co
 	return !bHit;
 }
 
+// A* optimization to find the destination node quicker. Only return the most PROBABLE shortest path. Adjust heuristic later depending on situation
+float AFlyingPathfinderVolume::Heuristic(FVector goal, FVector next)
+{
+	return FMath::Abs(goal.X - next.X) + FMath::Abs(goal.Y - next.Y) + FMath::Abs(goal.Z - next.Z);
+}

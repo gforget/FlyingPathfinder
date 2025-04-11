@@ -2,17 +2,25 @@
 
 
 #include "FlyingPathfinder/Public/Pawns/FlyingCharacter.h"
+
+#include <string>
+
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "FlyingPathfinder/Public/Actors/RotationViewPointRef.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "ActorComponents/FlyingMovementComponent.h"
+#include "Utility/DebugHeader.h"
 
 // Sets default values
 AFlyingCharacter::AFlyingCharacter()
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	
+	// Create and initialize the flying movement component
+	FlyingMovementComponent = CreateDefaultSubobject<UFlyingMovementComponent>(TEXT("FlyingMovementComponent"));
 }
 
 void AFlyingCharacter::MoveInput(const FInputActionValue& Value)
@@ -64,6 +72,7 @@ void AFlyingCharacter::GoUpInput(const FInputActionValue& Value)
 	{
 		float MovementValue = Value.Get<float>();
 		AddMovementInput(GetActorUpVector(), MovementValue);
+		DebugScreen("Go up" + FString::Printf(TEXT("%f"), MovementValue), FColor::Cyan);
 	}
 }
 

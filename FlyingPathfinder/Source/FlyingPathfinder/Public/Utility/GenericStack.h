@@ -28,8 +28,6 @@ public:
 		// Handle stack underflow (stack is empty)
 		else
 		{
-			// You can throw an exception, print an error message, or return a default value here.
-			// In this example, we'll return a default-constructed value.
 			DebugScreen(TEXT("Stack is empty"), FColor::Red);
 			return T();
 		}

@@ -28,6 +28,9 @@ public:
 	UPROPERTY()
 	TArray<float> AllConnectedNeighboursBaseCost;
 
+	UPROPERTY()
+	float WeightCost = 1.0f;
+	
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;

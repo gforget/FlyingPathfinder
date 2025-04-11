@@ -18,6 +18,13 @@ public:
 	AFlyingPathfinderVolume();
 
 	GenericStack<UFlyingPathfindingNode*> GetPathToDestination(FVector InitialPoint, FVector DestinationPoint);
+
+private:
+	void AddNodeToCameFrom(TMap<int, UFlyingPathfindingNode*>& came_from, int IdNode, UFlyingPathfindingNode* ValueNode);
+	UFlyingPathfindingNode* GetNodeFromCameFrom(TMap<int, UFlyingPathfindingNode*>& came_from, int IdNode);
+	
+	void AddCostToCostSoFar(TMap<int, float>& cost_so_far,int IdNode, float Cost);
+	float GetCostFromCostSoFar(TMap<int, float>& cost_so_far, int IdNode);
 	
 protected:
 	virtual void BeginPlay() override;
@@ -35,7 +42,6 @@ protected:
 	void UpdateDebugVisualization();
 	void GeneratePathfindingNodes();
 	void ClearPathfindingNodes();
-
 #endif
 	
 	// Array of created pathfinding nodes
@@ -61,6 +67,9 @@ protected:
 	float NeighbourConnectionTraceRadius = 50.0f;
 	
 	//Debug properties
+	UPROPERTY(EditAnywhere, Category = "Debug")
+	bool bShowDebugPath = false;
+	
 	UPROPERTY(EditAnywhere, Category = "Debug")
 	bool bShowDebugSphere = true;
 
@@ -91,7 +100,9 @@ private:
 
 	// Return all nodes from a radius set in Grid Metric (not world metrics)
 	TArray<UFlyingPathfindingNode*> FindNodesInRadius(const FVector& Point, int32 Radius);
-
 	
 	bool HasClearSphereLineOfSight(const FVector& Start, const FVector& End);
+
+	// A* optimization to find the destination node quicker. Only return the most PROBABLE shortest path. Adjust heuristic later depending on situation
+	float Heuristic(FVector goal, FVector next);
 };

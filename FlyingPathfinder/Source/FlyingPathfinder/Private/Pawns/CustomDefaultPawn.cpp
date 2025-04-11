@@ -6,6 +6,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "DrawDebugHelpers.h"
+#include "ActorComponents/FlyingMovementComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "GameModes/FlyingPathfinderGameMode.h"
 #include "Pathfinder/FlyingPathfinderVolume.h"
@@ -108,24 +109,6 @@ void ACustomDefaultPawn::SelectOnSceneInput(const FInputActionValue& Value)
 			LastTraceHitLocation = TraceEnd;
 		}
 		
-		// Draw debug sphere if debug is enabled
-		if (bDebug)
-		{
-			const float SphereRadius = 20.0f;
-			const float DebugDuration = 5.0f;
-			const FColor DebugColor = FColor::Green;
-			
-			DrawDebugSphere(
-				GetWorld(),
-				LastTraceHitLocation,
-				SphereRadius,
-				12,
-				DebugColor,
-				false, 
-				DebugDuration
-			);
-		}
-		
 		// if (TargetAIController)
 		// {
 		// 	TargetAIController->SetPositionToGo(LastTraceHitLocation);
@@ -133,15 +116,18 @@ void ACustomDefaultPawn::SelectOnSceneInput(const FInputActionValue& Value)
 		
 		if (FlyingPathfinderGameMode)
 		{
+			
 			AFlyingCharacter* FlyingCharacter = Cast<AFlyingCharacter>(TargetAIController->GetPawn());
 			AFlyingPathfinderVolume* FlyingPathfinderVolume = FlyingPathfinderGameMode->GetVolumeAtLocation(LastTraceHitLocation);
 			
 			if (FlyingCharacter && FlyingPathfinderVolume)
 			{
-				FlyingPathfinderVolume->GetPathToDestination(
+				GenericStack<UFlyingPathfindingNode*> PathToDestination = FlyingPathfinderVolume->GetPathToDestination(
 					FlyingCharacter->GetActorLocation() + FlyingCharacter->FootPositionAnchor,
 					LastTraceHitLocation
 					);
+				
+				FlyingCharacter->FlyingMovementComponent->FollowFlyingPath(PathToDestination, LastTraceHitLocation);
 			}
 		}
 	}

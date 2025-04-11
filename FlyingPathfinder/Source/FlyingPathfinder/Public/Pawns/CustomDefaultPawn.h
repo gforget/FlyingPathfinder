@@ -36,9 +36,6 @@ protected:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Trace")
 	float MaxTraceDistance = 10000.0f;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Debug")
-	bool bDebug = false;
 
 	void ToggleSelectModeInput(const FInputActionValue& Value);
 	void SelectOnSceneInput(const FInputActionValue& Value);

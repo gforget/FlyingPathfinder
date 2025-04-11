@@ -6,9 +6,11 @@
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "FlyingCharacter.generated.h"
+
 class UInputMappingContext;
 class UInputAction;
 class ARotationViewPointRef;
+class UFlyingMovementComponent;
 
 UCLASS()
 class FLYINGPATHFINDER_API AFlyingCharacter : public ACharacter
@@ -23,6 +25,10 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category="Position Reference")
 	FVector FootPositionAnchor = FVector(0.0f, 0.0f, 25.0f);
+	
+	// Custom flying movement component
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
+	UFlyingMovementComponent* FlyingMovementComponent;
 	
 protected:
 	// Called when the game starts or when spawned
